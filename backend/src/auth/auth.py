@@ -1,4 +1,5 @@
 import json
+
 from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
@@ -18,6 +19,12 @@ class AuthError(Exception):
 
 # Auth Header
 def get_token_auth_header():
+    """
+    This function gets the authorization value from the request headers. If it is not exist, it will raise an exception
+    and if it is it will validate each part ot it. If it pass all these steps, it will return the token
+
+    :return: token
+    """
     auth = request.headers.get('Authorization', None)
     if not auth:
         raise AuthError({
@@ -47,6 +54,13 @@ def get_token_auth_header():
 
 
 def verify_decode_jwt(token):
+    """
+    This function takes a token as an input and verify it using Auth0, decode the payload from the token, and
+    validate the claims and then returns the payload or specific error
+
+    :param token:
+    :return payload:
+    """
     json_url = urlopen(f'https://{AUTH0_DOMAIN}/.well-known/jwks.json')
     jwks = json.loads(json_url.read())
     unverified_header = jwt.get_unverified_header(token)
@@ -98,6 +112,13 @@ def verify_decode_jwt(token):
 
 
 def check_permissions(permission, payload):
+    """
+    This function takes permission and payload as inputs, check if the key permissions is exist in the payload, and if
+    the specific permission that passed is exist in the permissions array in payload, and then if return true
+    :param permission:
+    :param payload:
+    :return True:
+    """
     if 'permissions' not in payload:
         raise AuthError({
             'code': 'invalid_claims',
@@ -112,6 +133,13 @@ def check_permissions(permission, payload):
 
 
 def requires_auth(permission=''):
+    """
+    This decorator takes a permission as an input, gets the token by calling get_token_auth_header function, verifies
+    this token, decode the jwt and gets the payload, and then check permissions if it is exist
+
+    :param permission:
+    :return:
+    """
     def requires_auth_decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
